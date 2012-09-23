@@ -7,31 +7,54 @@
 ##
 ## To test it out, run it and shout at your microphone:
 
-import alsaaudio, time, audioop
+import alsaaudio, time, numpy, wave
+ 
 
+################################################################################
+##Set up for alsaaudio
 # Open the device in nonblocking capture mode. The last argument could
 # just as well have been zero for blocking mode. Then we could have
 # left out the sleep call in the bottom of the loop
 inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE,alsaaudio.PCM_NONBLOCK)
-
 # Set attributes: Mono, 8000 Hz, 16 bit little endian samples
 inp.setchannels(1)
-inp.setrate(8000)
+inp.setrate(44100)
 inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+inp.setperiodsize(1024)
+################################################################################
 
-# The period size controls the internal number of frames per period.
-# The significance of this parameter is documented in the ALSA api.
-# For our purposes, it is suficcient to know that reads from the device
-# will return this many frames. Each frame being 2 bytes long.
-# This means that the reads below will return either 320 bytes of data
-# or 0 bytes of data. The latter is possible because we are in nonblocking
-# mode.
-inp.setperiodsize(160)
+################################################################################
+##Set up for Wav output
+w = wave.open('test.wav', 'w')
+w.setnchannels(1)
+w.setsampwidth(2)
+w.setframerate(44100)
+################################################################################
 
-while True:
-	# Read data from device
-	l,data = inp.read()
-	if l:
-		# Return the maximum of the absolute value of all samples in a fragment.
-		print audioop.max(data, 2)
-	time.sleep(.001)
+def PlotSample(Sample, SampleFreq):
+  import matplotlib.pyplot as plot
+  NumSamples = Sample.size
+  TimeRange = numpy.arange(0, NumSamples, 1)
+  print TimeRange
+  TimeRange = (TimeRange / SampleFreq) * 1000 #divide by sample rate then scale to ms   
+  print TimeRange
+  plot.plot(TimeRange, Sample)
+  plot.ylabel('Amplitude')
+  plot.xlabel('Time(ms)')
+  plot.show()
+
+################################################################################
+################################################################################
+Seconds = time.localtime()[5]
+
+Sample = numpy.array(0)
+while numpy.abs(Seconds -time.localtime()[5]) < 1:
+  # Read data from device
+  l,data = inp.read()
+  if l:
+    numbers = numpy.fromstring(data, dtype='int16')
+    numpy.append(Sample,numbers)
+    print 'numbers =',numbers.size
+    w.writeframes(data)
+print Sample.size
+PlotSample(numbers,44100.0)	
