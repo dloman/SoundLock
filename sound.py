@@ -47,14 +47,16 @@ def PlotSample(Sample, SampleFreq):
 ################################################################################
 Seconds = time.localtime()[5]
 
-Sample = numpy.array(0)
 while numpy.abs(Seconds -time.localtime()[5]) < 1:
   # Read data from device
   l,data = inp.read()
   if l:
     numbers = numpy.fromstring(data, dtype='int16')
-    numpy.append(Sample,numbers)
+    if 'Sample' in vars():
+      Sample = numpy.append(Sample, numbers)
+    else:
+      Sample = numbers
     print 'numbers =',numbers.size
     w.writeframes(data)
 print Sample.size
-PlotSample(numbers,44100.0)	
+PlotSample(Sample,44100.0)	
