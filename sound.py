@@ -80,7 +80,7 @@ def GetFFT(Sample, SampleRate):
   Magnitude = Magnitude/float(len(Sample))
 
   #shits about to get real
-  Magnitude = Magnitude**2
+  Magnitude = Magnitude*Magnitude.conjugate()
   return Magnitude, FrequencyRange
 
 ################################################################################
