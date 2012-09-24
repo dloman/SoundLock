@@ -1,11 +1,11 @@
 #!/usr/bin/python
 ## This script takes input plots its waveform
-## and plots a fft frquency plot 
-## 
+## and plots a fft frquency plot
+##
 
 import alsaaudio, time, numpy, wave, scipy, sys
 import matplotlib.pyplot as plot
-import scipy.signal as signal
+import scipy.stats as stats
 ################################################################################
 ##Set up for alsaaudio
 # Open the device in nonblocking capture mode. The last argument could
@@ -34,7 +34,7 @@ def InitializeWave(SampleRate):
 def PlotSample(Sample, SampleFreq, Magnitude, FrequencyRange):
   NumSamples = Sample.size
   TimeRange = numpy.arange(0, NumSamples, 1)
-  TimeRange = (TimeRange / float(SampleFreq)) * 1000 #divide by sample rate then scale to ms   
+  TimeRange = (TimeRange / float(SampleFreq)) * 1000 #divide by sample rate then scale to ms
   print TimeRange
   #plot time phase space
   plot.subplot(2,1,1)
@@ -73,12 +73,12 @@ def GetFFT(Sample, SampleRate):
   Range = numpy.arange(len(Sample))
   FrequencyRange = Range*SampleRate/(len(Sample)*10.0)
   Frequency = scipy.fft(Sample)
-  
+
   Magnitude = abs(Frequency)
-  
- #Take the magnitude of fft of Sample and scale the fft so that it is not a function of the length 
+
+ #Take the magnitude of fft of Sample and scale the fft so that it is not a function of the length
   Magnitude = Magnitude/float(len(Sample))
-  
+
   #shits about to get real
   Magnitude = Magnitude**2
   return Magnitude, FrequencyRange
@@ -90,7 +90,7 @@ if __name__ == '__main__':
   if len(sys.argv) == 2:
     if sys.argv[1] == '--sin-test':
       Sample = numpy.sin(5*numpy.linspace(0,3.14))
-    else: 
+    else:
       print '----------------------------------------------------------------------------------'
       print "sound.py--This program takes input from microphone and plots it's waveform"
       print "it then takes that waveform tranforms it into frequency space and plots the output"
@@ -101,7 +101,11 @@ if __name__ == '__main__':
   else:
     Sample = GetSample(SampleRate)
   Magnitude, FrequencyRange = GetFFT(Sample, SampleRate)
-  Peaks = signal.find_peaks_cwt(Sample, np.arange(1,10))
-  FrequencyPeaks = FrequencyRange[Peaks]
-  PlotSample(Sample, SampleRate, Peaks, FrequencyPeaks) 
-  #PlotSample(Sample, SampleRate, Magnitude, FrequencyRange) 
+  DataFirstHalf = numpy.array([FrequencyRange[0:len(FrequencyRange)/2.0], Magnitude[0:len(Magnitude)/2.0]])
+  DataSecondHalf = numpy.array([FrequencyRange[len(FrequencyRange)/2.0:-1], Magnitude[len(Magnitude)/2.0:-1]])
+  Gaussian = stats.norm
+  Peak1, StandardDev1 = Gaussian.fit(DataFirstHalf)
+  Peak2, StandardDev2 = Gaussian.fit(DataSecondHalf)
+  print 'Peak1 =',Peak1,'StandardDeviation1 =',StandardDev1
+  print 'Peak2 =',Peak2,'StandardDeviation2 =',StandardDev2
+  PlotSample(Sample, SampleRate, Magnitude, FrequencyRange)
