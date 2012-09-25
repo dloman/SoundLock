@@ -71,7 +71,7 @@ def GetSample(SampleRate):
 def GetFFT(Sample, SampleRate):
   #FFT Calculations
   Range = numpy.arange(len(Sample))
-  FrequencyRange = Range*SampleRate/(len(Sample)*10.0)
+  FrequencyRange = Range*SampleRate/float(len(Sample)*numpy.pi)
   Frequency = scipy.fft(Sample)
 
   Magnitude = abs(Frequency)
@@ -89,7 +89,7 @@ if __name__ == '__main__':
   SampleRate = 44100
   if len(sys.argv) == 2:
     if sys.argv[1] == '--sin-test':
-      Sample = numpy.sin(5*numpy.linspace(0,3.14))
+      Sample = numpy.sin(5*2*numpy.pi*numpy.linspace(0,numpy.pi,SampleRate))
     else:
       print '----------------------------------------------------------------------------------'
       print "sound.py--This program takes input from microphone and plots it's waveform"
