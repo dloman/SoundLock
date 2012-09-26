@@ -41,14 +41,14 @@ def ScoreSample(ValidatedTuple,Y):
   yLow, yHigh = ValidatedTuple
   LowScore = yLow*Y
   HighScore = yHigh*Y
-  
-  LowScore =  scipy.integrate.trapz(LowScore)
-  HighScore = scipy.integrate.trapz(HighScore)
+
+  LowScore =  scipy.integrate.trapz(LowScore)/scipy.integrate.trapz(Y)
+  HighScore = scipy.integrate.trapz(HighScore)/scipy.integrate.trapz(Y)
   if LowScore > HighScore:
     return LowScore
   else:
     return HighScore
-  
+
 
 ################################################################################
 def PlotSample(Sample, SampleFreq, Magnitude, FrequencyRange):
@@ -124,7 +124,7 @@ if __name__ == '__main__':
   Magnitude, FrequencyRange = GetFFT(Sample, SampleRate)
   DataFirstHalf = numpy.array([FrequencyRange[0:len(FrequencyRange)/2.0], Magnitude[0:len(Magnitude)/2.0]])
   DataSecondHalf = numpy.array([FrequencyRange[len(FrequencyRange)/2.0:-1], Magnitude[len(Magnitude)/2.0:-1]])
-  
+
   ValidatedTuple = GetValidatedData()
   print Magnitude.shape
   #Score = ScoreSample(ValidatedTuple, Magnitude)
