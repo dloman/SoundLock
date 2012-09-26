@@ -20,8 +20,6 @@ def InitializeRecording(SampleRate):
   inp.setperiodsize(1024)
   return inp
 ################################################################################
-
-################################################################################
 ##Set up for Wav output
 def InitializeWave(SampleRate):
   w = wave.open('test.wav', 'w')
@@ -29,6 +27,28 @@ def InitializeWave(SampleRate):
   w.setsampwidth(2)
   w.setframerate(SampleRate)
   return w
+
+################################################################################
+##this method gets the saved high and low output
+def GetValidatedData():
+  MagnitudeLow = numpy.load('MagnitudeLow.npy')
+  MagnitudeHigh = numpy.load('MagnitudeHigh.npy')
+  return MagnitudeLow, MagnitudeHigh
+
+################################################################################
+##this method compares the Sample with the validated data and returns a score
+def ScoreSample(ValidatedTuple,Y):
+  yLow, yHigh = ValidatedTuple
+  LowScore = yLow*Y
+  HighScore = yHigh*Y
+  
+  LowScore =  scipy.integrate.trapz(LowScore)
+  HighScore = scipy.integrate.trapz(HighScore)
+  if LowScore > HighScore:
+    return LowScore
+  else:
+    return HighScore
+  
 
 ################################################################################
 def PlotSample(Sample, SampleFreq, Magnitude, FrequencyRange):
@@ -105,4 +125,8 @@ if __name__ == '__main__':
   DataFirstHalf = numpy.array([FrequencyRange[0:len(FrequencyRange)/2.0], Magnitude[0:len(Magnitude)/2.0]])
   DataSecondHalf = numpy.array([FrequencyRange[len(FrequencyRange)/2.0:-1], Magnitude[len(Magnitude)/2.0:-1]])
   
+  ValidatedTuple = GetValidatedData()
+  print Magnitude.shape
+  #Score = ScoreSample(ValidatedTuple, Magnitude)
+  #print 'Score =', Score
   PlotSample(Sample, SampleRate, Magnitude, FrequencyRange)
