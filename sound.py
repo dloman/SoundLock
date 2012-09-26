@@ -3,7 +3,7 @@
 ## and plots a fft frquency plot
 ##
 
-import alsaaudio, time, numpy, wave, scipy, sys
+import alsaaudio, time, numpy, wave, scipy, sys, os
 import matplotlib.pyplot as plot
 import scipy.stats as stats
 ################################################################################
@@ -54,7 +54,7 @@ def GetSample(SampleRate):
   inp = InitializeRecording(SampleRate)
   w = InitializeWave(SampleRate)
   Seconds = time.localtime()[5]
-  while numpy.abs(Seconds -time.localtime()[5]) < 1:
+  while numpy.abs(Seconds -time.localtime()[5]) <= 1:
     # Read data from device
     l,data = inp.read()
     if l:
@@ -80,7 +80,8 @@ def GetFFT(Sample, SampleRate):
   Magnitude = Magnitude/float(len(Sample))
 
   #shits about to get real
-  Magnitude = Magnitude*Magnitude.conjugate()
+  #Magnitude = Magnitude*Magnitude.conjugate()
+  Magnitude= Magnitude**2
   return Magnitude, FrequencyRange
 
 ################################################################################
@@ -103,9 +104,5 @@ if __name__ == '__main__':
   Magnitude, FrequencyRange = GetFFT(Sample, SampleRate)
   DataFirstHalf = numpy.array([FrequencyRange[0:len(FrequencyRange)/2.0], Magnitude[0:len(Magnitude)/2.0]])
   DataSecondHalf = numpy.array([FrequencyRange[len(FrequencyRange)/2.0:-1], Magnitude[len(Magnitude)/2.0:-1]])
-  Gaussian = stats.norm
-  Peak1, StandardDev1 = Gaussian.fit(DataFirstHalf)
-  Peak2, StandardDev2 = Gaussian.fit(DataSecondHalf)
-  print 'Peak1 =',Peak1,'StandardDeviation1 =',StandardDev1
-  print 'Peak2 =',Peak2,'StandardDeviation2 =',StandardDev2
+  
   PlotSample(Sample, SampleRate, Magnitude, FrequencyRange)
