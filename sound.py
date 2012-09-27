@@ -11,6 +11,7 @@ import scipy.stats as stats
 # Open the device in nonblocking capture mode. The last argument could
 # just as well have been zero for blocking mode. Then we could have
 # left out the sleep call in the bottom of the loop
+################################################################################
 def InitializeRecording(SampleRate):
   inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE,alsaaudio.PCM_NONBLOCK)
   # Set attributes: Mono, 8000 Hz, 16 bit little endian samples
@@ -37,18 +38,50 @@ def GetValidatedData():
 
 ################################################################################
 ##this method compares the Sample with the validated data and returns a score
-def ScoreSample(ValidatedTuple,Y):
+def ScoreSample(ValidatedTuple, Y):
   yLow, yHigh = ValidatedTuple
-  LowScore = yLow*Y
-  HighScore = yHigh*Y
+  LowScore = stats.ks_2samp(yLow, Y)[1]
+  HighScore = stats.ks_2samp(yHigh, Y)[1]
 
-  LowScore =  scipy.integrate.trapz(LowScore)/scipy.integrate.trapz(Y)
-  HighScore = scipy.integrate.trapz(HighScore)/scipy.integrate.trapz(Y)
   if LowScore > HighScore:
     return LowScore
   else:
     return HighScore
 
+################################################################################
+def CorrelateSample(ValidatedTuple, Y):
+  yLow, yHigh = ValidatedTuple
+  NormLow = yLow/yLow.max()
+  NormHigh = yHigh/yHigh.max()
+  NormY = Y/scipy.integrate.trapz(Y)
+  LowScore  = numpy.correlate(NormY,NormLow).sum()
+  HighScore = numpy.correlate(NormY,NormHigh).sum()
+
+  if LowScore > HighScore:
+    return LowScore
+  else:
+    return HighScore
+
+################################################################################
+def NormalDistribution(x,y):
+  # picking 150 of from a normal distrubution
+  # with mean 0 and standard deviation 1
+  samp = scipy.norm.rvs(loc=0,scale=1,size=150)
+
+  param = scipy.norm.fit(samp) # distribution fitting
+
+  # now, param[0] and param[1] are the mean and
+  # the standard deviation of the fitted distribution
+  x = numpy.linspace(-5,5,100)
+  # fitted distribution
+  pdf_fitted = scipy.norm.pdf(x,loc=param[0],scale=param[1])
+  # original distribution
+  pdf = scipy.norm.pdf(x)
+
+  plot.title('Normal distribution')
+  plot.plot(x,pdf_fitted,'r-',x,pdf,'b-')
+  plot.hist(samp,normed=1,alpha=.3)
+  plot.show()
 
 ################################################################################
 def PlotSample(Sample, SampleFreq, Magnitude, FrequencyRange):
@@ -88,6 +121,7 @@ def GetSample(SampleRate):
   #PlotSample(Sample,SampleRate)
   return Sample
 
+################################################################################
 def GetFFT(Sample, SampleRate):
   #FFT Calculations
   Range = numpy.arange(len(Sample))
@@ -127,6 +161,6 @@ if __name__ == '__main__':
 
   ValidatedTuple = GetValidatedData()
   print Magnitude.shape
-  #Score = ScoreSample(ValidatedTuple, Magnitude)
-  #print 'Score =', Score
+  Score = CorrelateSample(ValidatedTuple, Magnitude)
+  print 'Score =', Score
   PlotSample(Sample, SampleRate, Magnitude, FrequencyRange)
