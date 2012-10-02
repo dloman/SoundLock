@@ -37,14 +37,22 @@ def GetValidatedData():
   return MagnitudeLow, MagnitudeHigh
 
 ################################################################################
+def floor(Input, Scale):
+  return numpy.floor(Input/Scale)*Scale
+
+################################################################################
 ##this method compares the Sample with the validated data and returns a score
 def ScoreSample(ValidatedTuple, Y,x):
   yLow, yHigh = ValidatedTuple
-  yLow = numpy.floor(yLow/10)*10; yHigh = numpy.floor(yHigh/10)*10
-  Y    = numpy.floor(Y/10)*10
+
+  #Floor zeros to avoid amplification of low signal
+  yLow  = floor(yLow, 10)
+  yHigh = floor(yHigh, 10)
+  Y     = floor(Y, 10)
   
   yLow = (yLow/numpy.trapz(yLow)); yHigh = (yHigh/numpy.trapz(yHigh))
   Y = (Y/numpy.trapz(Y))
+  #Trim edges and multiply source, scale factor and validated data 
   HighScore = yHigh[200:-200]* Y[200:-200] *100000
   LowScore  = yLow[200:-200] * Y[200:-200] *100000
   print len(HighScore),len(LowScore)
@@ -52,8 +60,8 @@ def ScoreSample(ValidatedTuple, Y,x):
   plot.plot(x[200:-200],LowScore, 'r')
   plot.plot(x[200:-200],HighScore, 'b')
 
-  HighScore = numpy.floor(HighScore*10.0)/10.0
-  LowScore = numpy.floor(LowScore*10.0)/10.0
+  HighScore = floor(HighScore, .1)
+  LowScore  = floor(LowScore, .1)
   plot.show()
   HighScore = numpy.trapz(HighScore)
   LowScore  = numpy.trapz(LowScore)
