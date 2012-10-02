@@ -38,50 +38,29 @@ def GetValidatedData():
 
 ################################################################################
 ##this method compares the Sample with the validated data and returns a score
-def ScoreSample(ValidatedTuple, Y):
+def ScoreSample(ValidatedTuple, Y,x):
   yLow, yHigh = ValidatedTuple
-  LowScore = stats.ks_2samp(yLow, Y)[1]
-  HighScore = stats.ks_2samp(yHigh, Y)[1]
+  yLow = numpy.floor(yLow/10)*10; yHigh = numpy.floor(yHigh/10)*10
+  Y    = numpy.floor(Y/10)*10
+  
+  yLow = (yLow/numpy.trapz(yLow)); yHigh = (yHigh/numpy.trapz(yHigh))
+  Y = (Y/numpy.trapz(Y))
+  HighScore = yHigh[200:-200]* Y[200:-200] *100000
+  LowScore  = yLow[200:-200] * Y[200:-200] *100000
+  print len(HighScore),len(LowScore)
+  print len(HighScore),len(LowScore)
+  plot.plot(x[200:-200],LowScore, 'r')
+  plot.plot(x[200:-200],HighScore, 'b')
 
-  if LowScore > HighScore:
-    return LowScore
-  else:
-    return HighScore
-
-################################################################################
-def CorrelateSample(ValidatedTuple, Y):
-  yLow, yHigh = ValidatedTuple
-  NormLow = yLow/yLow.max()
-  NormHigh = yHigh/yHigh.max()
-  NormY = Y/scipy.integrate.trapz(Y)
-  LowScore  = numpy.correlate(NormY,NormLow).sum()
-  HighScore = numpy.correlate(NormY,NormHigh).sum()
-
-  if LowScore > HighScore:
-    return LowScore
-  else:
-    return HighScore
-
-################################################################################
-def NormalDistribution(x,y):
-  # picking 150 of from a normal distrubution
-  # with mean 0 and standard deviation 1
-  samp = scipy.norm.rvs(loc=0,scale=1,size=150)
-
-  param = scipy.norm.fit(samp) # distribution fitting
-
-  # now, param[0] and param[1] are the mean and
-  # the standard deviation of the fitted distribution
-  x = numpy.linspace(-5,5,100)
-  # fitted distribution
-  pdf_fitted = scipy.norm.pdf(x,loc=param[0],scale=param[1])
-  # original distribution
-  pdf = scipy.norm.pdf(x)
-
-  plot.title('Normal distribution')
-  plot.plot(x,pdf_fitted,'r-',x,pdf,'b-')
-  plot.hist(samp,normed=1,alpha=.3)
+  HighScore = numpy.floor(HighScore*10.0)/10.0
+  LowScore = numpy.floor(LowScore*10.0)/10.0
   plot.show()
+  HighScore = numpy.trapz(HighScore)
+  LowScore  = numpy.trapz(LowScore)
+  if LowScore > HighScore:
+    return LowScore
+  else:
+    return HighScore
 
 ################################################################################
 def PlotSample(Sample, SampleFreq, Magnitude, FrequencyRange):
@@ -107,20 +86,22 @@ def GetSample(SampleRate):
   inp = InitializeRecording(SampleRate)
   w = InitializeWave(SampleRate)
   Seconds = time.localtime()[5]
-  while numpy.abs(Seconds -time.localtime()[5]) <= 1:
+  switch = True
+  while switch ==True:
     # Read data from device
     l,data = inp.read()
     if l:
       numbers = numpy.fromstring(data, dtype='int16')
-      if 'Sample' in vars():
-        Sample = numpy.append(Sample, numbers)
-      else:
+      if 'Sample' not in vars():
         Sample = numbers
-      print 'numbers =',numbers.size
-      w.writeframes(data)
-  #PlotSample(Sample,SampleRate)
-  return Sample
-
+      else:
+        Sample = numpy.append(Sample, numbers)
+        if len(Sample) > 20000:
+          HalfPoint = len(Sample/2)
+          Sample = Sample[HalfPoint-20000:HalfPoint+20000]
+          return Sample
+          w.writeframes(data)
+  
 ################################################################################
 def GetFFT(Sample, SampleRate):
   #FFT Calculations
@@ -156,11 +137,9 @@ if __name__ == '__main__':
   else:
     Sample = GetSample(SampleRate)
   Magnitude, FrequencyRange = GetFFT(Sample, SampleRate)
-  DataFirstHalf = numpy.array([FrequencyRange[0:len(FrequencyRange)/2.0], Magnitude[0:len(Magnitude)/2.0]])
-  DataSecondHalf = numpy.array([FrequencyRange[len(FrequencyRange)/2.0:-1], Magnitude[len(Magnitude)/2.0:-1]])
+  numpy.save('Output', Magnitude)
 
   ValidatedTuple = GetValidatedData()
-  print Magnitude.shape
-  Score = CorrelateSample(ValidatedTuple, Magnitude)
+  Score = ScoreSample(ValidatedTuple, Magnitude,FrequencyRange)
   print 'Score =', Score
   PlotSample(Sample, SampleRate, Magnitude, FrequencyRange)
