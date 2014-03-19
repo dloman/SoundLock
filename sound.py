@@ -49,20 +49,20 @@ def ScoreSample(ValidatedTuple, Y,x):
   yLow  = floor(yLow, 10)
   yHigh = floor(yHigh, 10)
   Y     = floor(Y, 10)
-  
+
   yLow = (yLow/numpy.trapz(yLow)); yHigh = (yHigh/numpy.trapz(yHigh))
   Y = (Y/numpy.trapz(Y))
-  #Trim edges and multiply source, scale factor and validated data 
+  #Trim edges and multiply source, scale factor and validated data
   HighScore = yHigh[200:-200]* Y[200:-200] *100000
   LowScore  = yLow[200:-200] * Y[200:-200] *100000
-  print len(HighScore),len(LowScore)
-  print len(HighScore),len(LowScore)
-  plot.plot(x[200:-200],LowScore, 'r')
-  plot.plot(x[200:-200],HighScore, 'b')
+  #print len(HighScore),len(LowScore)
+  #print len(HighScore),len(LowScore)
+  #plot.plot(x[200:-200],LowScore, 'r')
+  #plot.plot(x[200:-200],HighScore, 'b')
 
   HighScore = floor(HighScore, .1)
   LowScore  = floor(LowScore, .1)
-  plot.show()
+  #plot.show()
   HighScore = numpy.trapz(HighScore)
   LowScore  = numpy.trapz(LowScore)
   if LowScore > HighScore:
@@ -75,7 +75,7 @@ def PlotSample(Sample, SampleFreq, Magnitude, FrequencyRange):
   NumSamples = Sample.size
   TimeRange = numpy.arange(0, NumSamples, 1)
   TimeRange = (TimeRange / float(SampleFreq)) * 1000 #divide by sample rate then scale to ms
-  print TimeRange
+  #print 'TimeRange',TimeRange
   #plot time phase space
   plot.subplot(2,1,1)
   plot.plot(TimeRange, Sample)
@@ -109,7 +109,7 @@ def GetSample(SampleRate):
           Sample = Sample[HalfPoint-20000:HalfPoint+20000]
           return Sample
           w.writeframes(data)
-  
+
 ################################################################################
 def GetFFT(Sample, SampleRate):
   #FFT Calculations
@@ -131,23 +131,27 @@ def GetFFT(Sample, SampleRate):
 ################################################################################
 if __name__ == '__main__':
   SampleRate = 44100
-  if len(sys.argv) == 2:
-    if sys.argv[1] == '--sin-test':
-      Sample = numpy.sin(5*2*numpy.pi*numpy.linspace(0,numpy.pi,SampleRate))
+  while True:
+    if len(sys.argv) == 2:
+      if sys.argv[1] == '--sin-test':
+        Sample = numpy.sin(5*2*numpy.pi*numpy.linspace(0,numpy.pi,SampleRate))
+      else:
+        print '''----------------------------------------------------------------------------------'
+                "sound.py--This program takes input from microphone and plots it's waveform"
+                "it then takes that waveform tranforms it into frequency space and plots the output"
+                '----------------------------------------------------------------------------------'
+                '\nUsage $./sound.py [--sin-test] \n'
+                'Default takes input from microphone plots --sin-test runs funtion using a sinwave\n'''
+        exit()
     else:
-      print '----------------------------------------------------------------------------------'
-      print "sound.py--This program takes input from microphone and plots it's waveform"
-      print "it then takes that waveform tranforms it into frequency space and plots the output"
-      print '----------------------------------------------------------------------------------'
-      print '\nUsage $./sound.py [--sin-test] \n'
-      print 'Default takes input from microphone plots --sin-test runs funtion using a sinwave\n'
-      exit()
-  else:
-    Sample = GetSample(SampleRate)
-  Magnitude, FrequencyRange = GetFFT(Sample, SampleRate)
-  numpy.save('Output', Magnitude)
-
-  ValidatedTuple = GetValidatedData()
-  Score = ScoreSample(ValidatedTuple, Magnitude,FrequencyRange)
-  print 'Score =', Score
-  PlotSample(Sample, SampleRate, Magnitude, FrequencyRange)
+      print 'Collecting Sample'
+      Sample = GetSample(SampleRate)
+    print 'Getting FFT of Sample'
+    Magnitude, FrequencyRange = GetFFT(Sample, SampleRate)
+    #numpy.save('Output', Magnitude)
+    print 'Gettting Validated data'
+    ValidatedTuple = GetValidatedData()
+    print 'Gettting score'
+    Score = ScoreSample(ValidatedTuple, Magnitude,FrequencyRange)
+    print 'Score =',Score
+    #PlotSample(Sample, SampleRate, Magnitude, FrequencyRange)
