@@ -4,8 +4,9 @@
 ##
 
 import alsaaudio, time, numpy, wave, scipy, sys, os
-import matplotlib.pyplot as plot
+#import matplotlib.pyplot as plot
 import scipy.stats as stats
+import RPi.GPIO as gpio
 ################################################################################
 ##Set up for alsaaudio
 # Open the device in nonblocking capture mode. The last argument could
@@ -13,13 +14,16 @@ import scipy.stats as stats
 # left out the sleep call in the bottom of the loop
 ################################################################################
 def InitializeRecording(SampleRate):
-  inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE,alsaaudio.PCM_NONBLOCK)
-  # Set attributes: Mono, 8000 Hz, 16 bit little endian samples
-  inp.setchannels(1)
-  inp.setrate(SampleRate)
-  inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
-  inp.setperiodsize(1024)
-  return inp
+  try:
+    inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE,alsaaudio.PCM_NONBLOCK)
+    # Set attributes: Mono, 8000 Hz, 16 bit little endian samples
+    inp.setchannels(1)
+    inp.setrate(SampleRate)
+    inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+    inp.setperiodsize(1024)
+    return inp
+  except:
+    print 'sound card being used'
 ################################################################################
 ##Set up for Wav output
 def InitializeWave(SampleRate):
@@ -131,6 +135,9 @@ def GetFFT(Sample, SampleRate):
 ################################################################################
 if __name__ == '__main__':
   SampleRate = 44100
+  gpio.setmode(gpio.BOARD)
+  gpio.setup(12,gpio.OUT)
+  gpio.output(12,0)
   while True:
     if len(sys.argv) == 2:
       if sys.argv[1] == '--sin-test':
@@ -144,14 +151,15 @@ if __name__ == '__main__':
                 'Default takes input from microphone plots --sin-test runs funtion using a sinwave\n'''
         exit()
     else:
-      print 'Collecting Sample'
       Sample = GetSample(SampleRate)
-    print 'Getting FFT of Sample'
     Magnitude, FrequencyRange = GetFFT(Sample, SampleRate)
     #numpy.save('Output', Magnitude)
-    print 'Gettting Validated data'
     ValidatedTuple = GetValidatedData()
-    print 'Gettting score'
     Score = ScoreSample(ValidatedTuple, Magnitude,FrequencyRange)
-    print 'Score =',Score
+    print Score
+    if Score > 1.:
+      gpio.output(12,1)
+      time.sleep(3)
+      gpio.output(12,0)
+
     #PlotSample(Sample, SampleRate, Magnitude, FrequencyRange)
